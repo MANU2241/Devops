@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        nodejs "node18"
+        nodejs "node20"
     }
 
     environment {
@@ -20,33 +20,33 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                bat 'npm install'
             }
         }
 
         stage('Build React App') {
             steps {
-                sh 'npm run build'
+                bat 'npm run build'
             }
         }
 
         stage('Docker Build') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                bat 'docker build -t $IMAGE_NAME .'
             }
         }
 
         stage('Docker Push') {
             steps {
-                sh "echo $DOCKERHUB_PSW | docker login -u $DOCKERHUB_USR --password-stdin"
-                sh 'docker push $IMAGE_NAME'
+                bat "echo $DOCKERHUB_PSW | docker login -u $DOCKERHUB_USR --password-stdin"
+                bat 'docker push $IMAGE_NAME'
             }
         }
 
         stage('Deploy App') {
             steps {
-                sh 'docker rm -f reactapp || true'
-                sh 'docker run -d -p 80:80 --name reactapp $IMAGE_NAME'
+                bat 'docker rm -f reactapp || true'
+                bat 'docker run -d -p 80:80 --name reactapp $IMAGE_NAME'
             }
         }
     }
