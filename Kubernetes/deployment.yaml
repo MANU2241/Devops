@@ -1,21 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: zomato
-  labels:
-    app: zomato
+  name: react-frontend
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: zomato
+      app: react-app
   template:
     metadata:
       labels:
-        app: zomato
+        app: react-app
     spec:
       containers:
-      - name: zomato
-        image: kastrov/zomato:latest
+      - name: react-container
+        image: jmmanu/foodapp
         ports:
-        - containerPort: 3000
+        - containerPort: 80
