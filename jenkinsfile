@@ -2,12 +2,12 @@ pipeline {
     agent any
 
     tools {
-        nodejs "node20"
+        nodejs "node20"   // Make sure node20 is configured in Jenkins tools
     }
 
     environment {
-        DOCKERHUB = credentials('dockerhub-creds')    // your credential ID
-        IMAGE_NAME = "username/react-jenkins"         // change to your DockerHub repo
+        DOCKERHUB = credentials('dockerhub-creds')     // your Jenkins credential ID
+        IMAGE_NAME = "username/react-jenkins"          // change to your DockerHub repo
     }
 
     stages {
@@ -18,13 +18,13 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Install Dependencies (Local Test Build)') {
             steps {
                 bat "npm install"
             }
         }
 
-        stage('Build React Locally') {
+        stage('React Local Build (Optional Check)') {
             steps {
                 bat "npm run build"
             }
