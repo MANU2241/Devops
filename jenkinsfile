@@ -6,47 +6,54 @@ pipeline {
     }
 
     environment {
-        DOCKERHUB = credentials('dockerhub-creds')
-        IMAGE_NAME = "username/react-jenkins"
+        DOCKERHUB = credentials('dockerhub-creds')    // your credential ID
+        IMAGE_NAME = "username/react-jenkins"         // change to your DockerHub repo
     }
 
     stages {
 
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/MANU2241/Devops.git'
+                git branch: 'main', url: 'https://github.com/MANU2241/Devops.git'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                bat 'npm install'
+                bat "npm install"
             }
         }
 
-        stage('Build React App') {
+        stage('Build React Locally') {
             steps {
-                bat 'npm run build'
+                bat "npm run build"
             }
         }
 
         stage('Docker Build') {
             steps {
-                bat 'docker build -t $IMAGE_NAME .'
+                bat "docker build -t %IMAGE_NAME% ."
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                bat """
+                echo %DOCKERHUB_PSW% | docker login -u %DOCKERHUB_USR% --password-stdin
+                """
             }
         }
 
         stage('Docker Push') {
             steps {
-                bat "echo $DOCKERHUB_PSW | docker login -u $DOCKERHUB_USR --password-stdin"
-                bat 'docker push $IMAGE_NAME'
+                bat "docker push %IMAGE_NAME%"
             }
         }
 
-        stage('Deploy App') {
+        stage('Deploy Container') {
             steps {
-                bat 'docker rm -f reactapp || true'
-                bat 'docker run -d -p 80:80 --name reactapp $IMAGE_NAME'
+                bat "docker rm -f reactapp || exit 0"
+                bat "docker run -d -p 80:80 --name reactapp %IMAGE_NAME%"
             }
         }
     }
