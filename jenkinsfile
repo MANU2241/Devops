@@ -2,15 +2,35 @@ pipeline {
     agent any
 
     tools {
-        nodejs "node20"     // Must match NodeJS tool in Jenkins
+        nodejs "node20"
+    }
+
+    triggers {
+        // Trigger 1 → Poll Git every 1 minute (safe fallback)
+        pollSCM('* * * * *')
+
+        // Trigger 2 → Auto-run when GitHub sends a webhook
+        githubPush()
     }
 
     environment {
-        DOCKERHUB = credentials('dockerhub-creds')     // DockerHub creds in Jenkins
-        IMAGE_NAME = "jmmanu/react-jenkins"          // Your DockerHub repo
+        IMAGE_NAME = "jmmanu/react-jenkins"
+        DOCKERHUB = credentials('dockerhub-creds')
+
+        // IMPORTANT → Use your real kubeconfig, not Jenkins credentials
+        KUBECONFIG = "C:\\Users\\Admin\\.kube\\config"
     }
 
     stages {
+
+        stage('Start / Verify Minikube') {
+            steps {
+                bat """
+                echo Checking Minikube...
+                minikube status || minikube start --driver=docker
+                """
+            }
+        }
 
         stage('Checkout Code') {
             steps {
@@ -24,7 +44,7 @@ pipeline {
             }
         }
 
-        stage('Local React Build Check') {
+        stage('Build React App') {
             steps {
                 bat "npm run build"
             }
@@ -32,7 +52,7 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                bat "docker build -t %IMAGE_NAME% ."
+                bat "docker build -t %IMAGE_NAME%:latest ."
             }
         }
 
@@ -46,15 +66,28 @@ pipeline {
 
         stage('Docker Push') {
             steps {
-                bat "docker push %IMAGE_NAME%"
+                bat "docker push %IMAGE_NAME%:latest"
             }
         }
 
-        stage('Deploy Container') {
+        stage('Deploy to Kubernetes') {
             steps {
-                bat "docker rm -f reactapp || exit 0"
-                bat "docker run -d -p 80:80 --name reactapp %IMAGE_NAME%"
+                bat """
+                kubectl apply -f k8s/deployment.yaml
+                kubectl apply -f k8s/service.yaml
+                kubectl set image deployment/react-app react-app=%IMAGE_NAME%:latest --record
+                kubectl rollout status deployment/react-app
+                """
             }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 Deployment Successful!"
+        }
+        failure {
+            echo "❌ Deployment Failed. Check logs."
         }
     }
 }
