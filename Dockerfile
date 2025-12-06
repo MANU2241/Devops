@@ -2,23 +2,20 @@
 FROM node:18 AS build
 WORKDIR /app
 
-# Copy complete project (ensures react-scripts is installed properly)
+# Copy full project
 COPY . .
 
-# Install ALL dependencies inside Docker
+# Install all dependencies
 RUN npm install
 
-# Build the React project
+# Build React project
 RUN npm run build
 
-
-# Step 2: Serve build using nginx
+# Step 2: Serve using NGINX
 FROM nginx:alpine
 
-# Copy built static files
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Expose port
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
